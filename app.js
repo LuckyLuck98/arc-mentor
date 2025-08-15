@@ -1,17 +1,258 @@
-const WEBHOOK_N8N  = '[[WEBHOOK_URL_N8N]]';
-const WEBHOOK_MAKE = '[[WEBHOOK_URL_MAKE]]';
+// ARC Mentor front‑end logic
 
-const appState = { user:null, missions:[], stats:{hp:100,xp:0,gold:0,streak:0}, penalties:[], skills:['focus'], mood:'neutral' };
-const $ = s=>document.querySelector(s);
-function show(v){v.hidden=false}function hide(v){v.hidden=true}
-function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1500)}
-function save(){localStorage.setItem('arc_state',JSON.stringify(appState))}function load(){const s=localStorage.getItem('arc_state');if(s)Object.assign(appState,JSON.parse(s))}
-function render(){ $('#bar-hp').style.width=Math.max(0,Math.min(100,appState.stats.hp))+'%'; $('#bar-xp').style.width=Math.max(0,Math.min(100,appState.stats.xp%100))+'%'; $('#stat-gold').textContent=appState.stats.gold; $('#stat-streak').textContent=appState.stats.streak; const wrap=$('#quests'); wrap.innerHTML=''; appState.missions.forEach(m=>{ const el=document.createElement('div'); el.className='quest'; el.innerHTML=`<h4>${m.title}</h4><div class='meta'>XP: ${m.xp} • Gold: ${m.gold} • Source: ${m.source} • Status: ${m.status}</div><div class='row'>${m.status==='todo'?`<button class='btn' data-act='claim'>Claim</button><button class='btn secondary' data-act='fail'>Fail</button>`:`<span class='meta'>Done</span>`}${m.calendarLink?`<a class='btn secondary' href='${m.calendarLink}' target='_blank'>View event</a>`:''}</div>`; el.addEventListener('click',async e=>{const act=e.target?.dataset?.act;if(!act)return;m.status=(act==='claim')?'done':'failed'; if(act==='claim'){appState.stats.xp+=m.xp;appState.stats.gold+=m.gold;appState.stats.streak=(appState.stats.streak||0)+1;} if(act==='fail'){appState.stats.hp=Math.max(0,appState.stats.hp-5);} save(); render(); if(WEBHOOK_N8N&&WEBHOOK_N8N.startsWith('http')){fetch(`${WEBHOOK_N8N}/update`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({missionId:m.id,status:m.status})}).catch(()=>{});} toast(act==='claim'?'Quest claimed!':'Quest failed');}); wrap.appendChild(el); }); }
-function addQuest(){ const t=$('#q-title').value.trim(); const xp=+$('#q-xp').value||0; const g=+$('#q-gold').value||0; const s=$('#q-source').value||'system'; if(!t)return toast('Title required'); appState.missions.unshift({id:'q_'+Date.now(),title:t,xp, gold:g, source:s,status:'todo'}); $('#q-title').value=$('#q-xp').value=$('#q-gold').value=''; save(); render(); }
-async function postJSON(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); if(!r.ok)throw new Error('HTTP '+r.status); return r.json();}
-async function checkCalendar(){ try{ const userId=appState.user?.id||'guest'; const now=new Date(); const from=now.toISOString().slice(0,10); const toD=new Date(now); toD.setDate(toD.getDate()+7); const to=toD.toISOString().slice(0,10); toast('Syncing calendar…'); const data=await postJSON(`${WEBHOOK_N8N}/calendar-sync`,{userId, dateFrom:from, dateTo:to}); if(Array.isArray(data.missions))appState.missions=data.missions; if(data.stats)appState.stats=data.stats; save(); render(); toast('Calendar synced'); }catch(e){console.error(e);toast('Calendar sync failed');} }
-async function autoPlan(){ try{ const stats={hp:appState.stats.hp,xp:appState.stats.xp,skills:appState.skills,mood:appState.mood}; const now=new Date(); const s=new Date(now); s.setHours(18,0,0,0); const e=new Date(now); e.setHours(19,0,0,0); const freeSlots=[{start:s.toISOString(),end:e.toISOString()}]; const recentFails=appState.missions.filter(m=>m.status==='failed').map(m=>m.id); toast('Planning…'); const data=await postJSON(`${WEBHOOK_MAKE}/coach`,{stats,freeSlots,recentFails}); if(Array.isArray(data.sideQuests)){ const injected=data.sideQuests.map((q,i)=>({id:`sq_${Date.now()}_${i}`,title:q.title,xp:+q.xp||10,gold:+q.gold||5,source:'system',status:'todo',proof:q.proof||'checklist'})); appState.missions=[...injected,...appState.missions]; } if(Array.isArray(data.penalties)&&data.penalties.length){ appState.penalties=data.penalties; alert('Penalties: '+data.penalties.map(p=>`${p.type}:${p.value}`).join(', ')); } save(); render(); toast('Side quests added'); }catch(e){console.error(e);toast('Auto-Plan failed');} }
-async function createEvents(){ try{ const quests=appState.missions.filter(m=>m.status==='todo').slice(0,3); if(!quests.length)return toast('No TODO quests'); toast('Creating events…'); const data=await postJSON(`${WEBHOOK_N8N}/create-events`,{userId:appState.user?.id||'guest',quests}); if(Array.isArray(data?.created)){ for(const ev of data.created){ const m=appState.missions.find(x=>x.id===ev.questId); if(m)m.calendarLink=ev.htmlLink; } save(); render(); } toast('Events created'); }catch(e){console.error(e);toast('Failed to create events');} }
-function wire(){ $('#btn-get-started').onclick=()=>{hide($('#view-intro'));show($('#view-auth'));}; $('#btn-login').onclick=()=>{const id=$('#input-user').value.trim()||'guest'; appState.user={id}; hide($('#view-auth')); show($('#view-dashboard')); save(); render();}; $('#btn-add-quest').onclick=addQuest; $('#btn-check-calendar').onclick=checkCalendar; $('#btn-auto-plan').onclick=autoPlan; $('#btn-create-events').onclick=createEvents; }
-function particles(){ const c=document.getElementById('particle-canvas'); const ctx=c.getContext('2d'); function resize(){c.width=innerWidth;c.height=innerHeight} addEventListener('resize',resize); resize(); const pts=new Array(120).fill(0).map(()=>({x:Math.random()*c.width,y:Math.random()*c.height,dx:(Math.random()-.5)*.6,dy:(Math.random()-.5)*.6,r:1+Math.random()*2})); (function tick(){ ctx.clearRect(0,0,c.width,c.height); for(const p of pts){ p.x+=p.dx; p.y+=p.dy; if(p.x<0||p.x>c.width)p.dx*=-1; if(p.y<0||p.y>c.height)p.dy*=-1; ctx.fillStyle='hsla('+(Math.random()*360|0)+',70%,60%,.5)'; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); } requestAnimationFrame(tick); })(); }
-load(); addEventListener('DOMContentLoaded',()=>{particles(); wire(); render();});
+// Replace these placeholders via secrets during deployment. If the placeholders
+// remain (contain '[[', the application will operate in mock mode.
+const WEBHOOK_N8N = '[[WEBHOOK_URL_N8N]]';
+const WEBHOOK_MAKE = '[[WEBHOOK_URL_MAKE]]' || WEBHOOK_N8N;
+
+// Application state. This is persisted to localStorage so that the user can
+// refresh the page and keep progress. Missions include an id, title, xp,
+// gold and status (planned/done/fail/etc). Stats track HP, XP, XP goal,
+// gold and streak.
+const appState = {
+  user: null,
+  missions: [],
+  stats: { hp: 100, xp: 0, xpGoal: 100, gold: 0, streak: 0 },
+  freeSlots: [],
+  penalties: [],
+  skills: [],
+  recentFails: []
+};
+
+// Save state to localStorage
+function save() {
+  localStorage.setItem('arc_state', JSON.stringify(appState));
+}
+
+// Load state from localStorage
+function load() {
+  const stored = localStorage.getItem('arc_state');
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      Object.assign(appState, parsed);
+    } catch (err) {
+      console.error('Failed to parse stored state', err);
+    }
+  }
+}
+
+// Show only the view corresponding to `name` and hide all others
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const target = document.getElementById(`view-${name}`);
+  if (target) target.classList.add('active');
+}
+
+// Render stats onto the dashboard
+function renderStats() {
+  document.getElementById('stat-hp').textContent = appState.stats.hp;
+  document.getElementById('stat-xp').textContent = appState.stats.xp;
+  document.getElementById('stat-xpGoal').textContent = appState.stats.xpGoal;
+  document.getElementById('stat-gold').textContent = appState.stats.gold;
+  document.getElementById('stat-streak').textContent = appState.stats.streak;
+}
+
+// Render missions list
+function renderMissions() {
+  const list = document.getElementById('missions-list');
+  list.innerHTML = '';
+  appState.missions.forEach(m => {
+    const li = document.createElement('li');
+    li.textContent = `${m.title} (${m.status})`;
+    // Buttons to mark done or fail
+    const btnDone = document.createElement('button');
+    btnDone.textContent = 'Done';
+    btnDone.onclick = () => updateMission(m.id, 'done');
+    const btnFail = document.createElement('button');
+    btnFail.textContent = 'Fail';
+    btnFail.onclick = () => updateMission(m.id, 'fail');
+    li.appendChild(btnDone);
+    li.appendChild(btnFail);
+    list.appendChild(li);
+  });
+}
+
+// Add a chat message to the coach window
+function addChatMessage(text, who) {
+  const chat = document.getElementById('coach-chat');
+  const div = document.createElement('div');
+  div.className = `chat-message ${who}`;
+  div.textContent = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+// POST JSON helper. Returns parsed JSON or throws.
+async function postJSON(url, body) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+// Sync calendar missions from backend
+async function checkCalendar() {
+  const body = {
+    userId: appState.user || 'guest',
+    // fetch next 7 days by default
+    dateFrom: new Date().toISOString(),
+    dateTo: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+  };
+  const resultArea = document.getElementById('calendar-result');
+  try {
+    const data = await postJSON(`${WEBHOOK_N8N}/calendar-sync`, body);
+    appState.missions = data.missions || [];
+    if (data.stats) {
+      Object.assign(appState.stats, data.stats);
+    }
+    renderMissions();
+    renderStats();
+    save();
+    resultArea.textContent = 'Calendar synced successfully.';
+  } catch (err) {
+    console.error(err);
+    resultArea.textContent = 'Failed to sync calendar.';
+  }
+}
+
+// Create calendar events from missions
+async function createEvents() {
+  const body = {
+    userId: appState.user || 'guest',
+    quests: appState.missions.map(m => ({ id: m.id, title: m.title, start: m.start_time, end: m.end_time }))
+  };
+  const resultArea = document.getElementById('calendar-result');
+  try {
+    await postJSON(`${WEBHOOK_N8N}/create-events`, body);
+    resultArea.textContent = 'Events created successfully.';
+  } catch (err) {
+    console.error(err);
+    resultArea.textContent = 'Failed to create events.';
+  }
+}
+
+// Send mission update to backend
+async function updateMission(id, status) {
+  try {
+    await postJSON(`${WEBHOOK_N8N}/update`, { missionId: id, status });
+    const mission = appState.missions.find(m => m.id === id);
+    if (mission) {
+      mission.status = status;
+    }
+    renderMissions();
+    save();
+  } catch (err) {
+    console.error(err);
+    alert('Failed to update mission');
+  }
+}
+
+// Ask the coach for guidance
+async function askCoach() {
+  const textarea = document.getElementById('coach-input');
+  const prompt = textarea.value.trim();
+  if (!prompt) return;
+  addChatMessage(prompt, 'user');
+  textarea.value = '';
+  try {
+    const body = {
+      prompt,
+      stats: appState.stats,
+      freeSlots: appState.freeSlots,
+      recentFails: appState.recentFails
+    };
+    const data = await postJSON(`${WEBHOOK_MAKE}/coach`, body);
+    // Add AI message
+    addChatMessage(data.message || 'No response', 'ai');
+    // Incorporate side quests into missions
+    if (Array.isArray(data.sideQuests)) {
+      data.sideQuests.forEach(q => {
+        appState.missions.push({
+          id: q.id || Date.now(),
+          title: q.title,
+          xp: q.xp || 0,
+          gold: q.gold || 0,
+          status: 'planned'
+        });
+      });
+      renderMissions();
+    }
+    // Add penalties
+    if (Array.isArray(data.penalties)) {
+      appState.penalties.push(...data.penalties);
+    }
+    save();
+  } catch (err) {
+    console.error(err);
+    addChatMessage('Failed to contact coach.', 'ai');
+  }
+}
+
+// Initialise the UI and state
+function init() {
+  load();
+  renderStats();
+  renderMissions();
+  // Set user id input
+  document.getElementById('input-user').value = appState.user || '';
+}
+
+// Attach event listeners
+document.addEventListener('DOMContentLoaded', () => {
+  // Tab buttons
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const view = btn.dataset.view;
+      showView(view);
+    });
+  });
+  // Calendar buttons
+  document.getElementById('btn-check-calendar').addEventListener('click', checkCalendar);
+  document.getElementById('btn-create-events').addEventListener('click', createEvents);
+  // Coach
+  document.getElementById('btn-coach-send').addEventListener('click', askCoach);
+  // Set user button
+  document.getElementById('btn-set-user').addEventListener('click', () => {
+    const idVal = document.getElementById('input-user').value.trim();
+    appState.user = idVal || null;
+    save();
+  });
+  init();
+});
+
+// Mock mode: if WEBHOOK_N8N still contains '[[' then intercept fetch and return fake data
+if (WEBHOOK_N8N.includes('[[')) {
+  window.fetch = async (url, opts = {}) => {
+    const { pathname } = new URL(url, window.location.origin);
+    const body = opts.body ? JSON.parse(opts.body) : {};
+    if (pathname.endsWith('/calendar-sync')) {
+      return new Response(JSON.stringify({
+        missions: [
+          { id: 1, title: 'Mock Quest 1', xp: 10, gold: 5, status: 'planned' },
+          { id: 2, title: 'Mock Quest 2', xp: 20, gold: 10, status: 'planned' }
+        ],
+        stats: { hp: 100, xp: 0, xpGoal: 100, gold: 0, streak: 0 }
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+    if (pathname.endsWith('/create-events')) {
+      return new Response(JSON.stringify({ created: body.quests || [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+    if (pathname.endsWith('/update')) {
+      return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+    if (pathname.endsWith('/coach')) {
+      return new Response(JSON.stringify({
+        message: 'Here are some suggestions.',
+        sideQuests: [ { id: Date.now(), title: 'Mock Side Quest', xp: 5, gold: 2 } ],
+        penalties: []
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+    return new Response(JSON.stringify({ error: 'Unknown mock endpoint' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+  };
+}
