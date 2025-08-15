@@ -1,0 +1,23 @@
+ARC Mentor Make Scenario for `/coach`
+====================================
+
+This file outlines a simple scenario for Make.com to handle the `/coach` webhook endpoint. If you prefer to use n8n exclusively, you can ignore this file and instead implement the logic in n8n.
+
+1. **Trigger** — Webhook
+   - Set up a Webhook trigger in Make listening on `/coach` (POST). Configure it to accept JSON.
+
+2. **Parse Input** — JSON parser
+   - The incoming body contains an object with `stats`, `freeSlots`, and `recentFails`.
+
+3. **AI Planning** — HTTP / OpenAI module
+   - Use an HTTP request or OpenAI module to call your language model with the prompts in `prompts/planner.json` and `prompts/generator.json`. Provide the input stats and available time slots. The AI should return side quests and penalties.
+
+4. **Build Response** — JSON builder
+   - Construct a JSON response with two top‑level keys:
+     - `sideQuests`: an array of quests ({title, xp, gold, proof}).
+     - `penalties`: an array of penalties ({type, value}).
+
+5. **Respond**
+   - Return the JSON object to the caller. Ensure the HTTP status is `200 OK` and the `Content‑Type` is `application/json`.
+
+You may extend this scenario with additional steps, such as storing generated quests in your database or sending a summary via email. Remember to supply your OpenAI API key and any other credentials needed for external services.
