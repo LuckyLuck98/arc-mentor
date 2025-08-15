@@ -1,0 +1,45 @@
+{
+  "name": "ARC Update Mission",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "update",
+        "method": "POST",
+        "responseMode": "onReceived"
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "update"
+    },
+    {
+      "parameters": {
+        "mode": "response",
+        "responseData": {
+          "json": {
+            "ok": true
+          },
+          "statusCode": 200
+        }
+      },
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [450, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
