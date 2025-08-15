@@ -1,18 +1,151 @@
-*{box-sizing:border-box}html,body{margin:0;height:100%;background:#0c0b10;color:#eee;font-family:system-ui,Segoe UI,Roboto,sans-serif;overflow-x:hidden}
-#particle-canvas{position:fixed;inset:0;z-index:0}
-#app{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:40px 16px}
-.btn{background:#a74cf0;border:0;color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer;box-shadow:0 0 10px #a74cf0aa;transition:.2s}
-.btn:hover{transform:translateY(-1px);box-shadow:0 0 14px #be7cf8}
-.btn.secondary{background:#333;box-shadow:none}
-.card{background:rgba(30,28,40,.8);backdrop-filter:blur(8px);border:1px solid #3b2b54;border-radius:14px;padding:14px;margin:16px 0}
-.row{display:flex;gap:8px}
-input,select{width:100%;padding:10px;border-radius:8px;border:1px solid #2e2a3a;background:#141221;color:#eee}
-.hud{display:grid;grid-template-columns:1fr 1fr 120px 120px;gap:12px;margin-bottom:12px}
-.bar span{display:block;margin-bottom:6px;color:#bbb}
-.track{height:14px;background:#1a1726;border-radius:10px;overflow:hidden;border:1px solid #2e2a3a}
-.fill{height:100%;width:30%;background:linear-gradient(90deg,#34d399,#a7f3d0);box-shadow:0 0 10px #34d399aa;transition:width .25s}
-.stat{display:flex;flex-direction:column;gap:4px;background:#151423;border:1px solid #2e2a3a;border-radius:12px;padding:8px 10px}
-#quests .quest{position:relative;border:1px solid #3f2f59;border-radius:12px;padding:12px;margin:10px 0;background:rgba(20,18,33,.9);transition:.15s}
-#quests .quest:hover{box-shadow:0 0 12px #a74cf055}
-#toast{position:fixed;right:16px;bottom:16px;background:#222;color:#fff;padding:10px 12px;border-radius:10px;opacity:0;transition:.2s;pointer-events:none}
-#toast.show{opacity:1}
+/* Global styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f5f5f5;
+}
+
+/* Tab bar styling */
+.tab-bar {
+  display: flex;
+  background: #2c3e50;
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.tab-btn {
+  flex: 1;
+  padding: 12px 8px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.tab-btn:hover {
+  background: #34495e;
+}
+
+/* View containers */
+.view {
+  display: none;
+  padding: 20px;
+}
+.view.active {
+  display: block;
+}
+
+/* Stats display */
+.stats div {
+  margin-bottom: 6px;
+  font-size: 1rem;
+}
+
+/* Missions list */
+#missions-list {
+  list-style: none;
+  padding: 0;
+}
+#missions-list li {
+  margin-bottom: 8px;
+  padding: 8px;
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+#missions-list li button {
+  margin-left: 4px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+/* Calendar section */
+.calendar-controls {
+  margin-bottom: 10px;
+}
+
+.calendar-result {
+  font-size: 0.9rem;
+  color: #333;
+}
+
+/* Chat window */
+.chat-window {
+  height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+  background: #ffffff;
+  margin-bottom: 10px;
+  border-radius: 4px;
+}
+.chat-message {
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+.chat-message.user {
+  text-align: right;
+  color: #2980b9;
+}
+.chat-message.ai {
+  text-align: left;
+  color: #2c3e50;
+}
+
+/* Chat input */
+.chat-input {
+  display: flex;
+  gap: 8px;
+}
+.chat-input textarea {
+  flex: 1;
+  resize: vertical;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: inherit;
+}
+.chat-input button {
+  padding: 8px 12px;
+  border: none;
+  background: #3498db;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.chat-input button:hover {
+  background: #2980b9;
+}
+
+/* Settings */
+#view-settings label {
+  display: block;
+  margin-bottom: 10px;
+}
+#view-settings input {
+  margin-left: 8px;
+  padding: 4px 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+#view-settings button {
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: #2ecc71;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+#view-settings button:hover {
+  background: #27ae60;
+}
+
+.note {
+  font-size: 0.8rem;
+  color: #777;
+}
