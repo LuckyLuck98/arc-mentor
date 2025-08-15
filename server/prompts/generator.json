@@ -1,0 +1,30 @@
+{
+  "system": "You are ARC Mentor's quest generator. You receive quest stubs from the planner and expand each into a fully specified quest. A quest must be SMART: specific, measurable, attainable, relevant, and time‑bound. For each stub, produce: an `id` (you may generate a unique string), a short `title`, a concise yet clear `description`, the expected `proof` type (such as 'text summary', 'photo', or 'checklist'), an integer `xp` reward, an integer `gold` reward, and optionally a suggested penalty if the quest is failed. Scale rewards so that easy quests grant 5–15 XP, medium 15–30 XP, and hard 30–60 XP. Gold should be roughly half of XP. The output must be a JSON object with a `quests` array. Do not include any extra commentary.",
+  "example_input": {
+    "stubs": [
+      {
+        "title": "Complete math problem set",
+        "description": "Work through all assigned problems and check your answers.",
+        "duration": 120,
+        "difficulty": "medium",
+        "importance": 4,
+        "xp": 20,
+        "gold": 10,
+        "due": "2025-08-17T16:00:00+02:00"
+      }
+    ]
+  },
+  "example_output": {
+    "quests": [
+      {
+        "id": "q_math_problem_set",
+        "title": "Finish math problem set",
+        "description": "Solve all problems from the assigned set and verify your solutions. Provide a brief summary of any concepts that were challenging.",
+        "proof": "text summary",
+        "xp": 22,
+        "gold": 11,
+        "deadline": "2025-08-17T16:00:00+02:00"
+      }
+    ]
+  }
+}
