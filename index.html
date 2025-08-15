@@ -1,47 +1,64 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ARC Mentor</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <canvas id="particle-canvas"></canvas>
+  <!-- Top navigation bar with tabs -->
+  <nav class="tab-bar">
+    <button class="tab-btn" data-view="dashboard">Dashboard</button>
+    <button class="tab-btn" data-view="missions">Missions</button>
+    <button class="tab-btn" data-view="calendar">Calendar</button>
+    <button class="tab-btn" data-view="coach">Coach</button>
+    <button class="tab-btn" data-view="settings">Settings</button>
+  </nav>
   <main id="app">
-    <section id="view-intro"><h1>ARC Mentor</h1><p>Gamified life tracker. Earn XP & gold, keep your streak alive.</p><button class="btn" id="btn-get-started">Get Started</button></section>
-    <section id="view-auth" hidden><h2>Log In</h2><input id="input-user" placeholder="User ID" /><button class="btn" id="btn-login">Log In</button></section>
-    <section id="view-dashboard" hidden>
-      <div class="hud">
-        <div class="bar"><span>HP</span><div class="track"><div id="bar-hp" class="fill"></div></div></div>
-        <div class="bar"><span>XP</span><div class="track"><div id="bar-xp" class="fill"></div></div></div>
-        <div class="stat"><span>💰 Gold</span><b id="stat-gold">0</b></div>
-        <div class="stat"><span>🔥 Streak</span><b id="stat-streak">0</b></div>
+    <!-- Dashboard view shows current stats -->
+    <section id="view-dashboard" class="view active">
+      <h2>Dashboard</h2>
+      <div class="stats">
+        <div>HP: <span id="stat-hp"></span></div>
+        <div>XP: <span id="stat-xp"></span> / <span id="stat-xpGoal"></span></div>
+        <div>Gold: <span id="stat-gold"></span></div>
+        <div>Streak: <span id="stat-streak"></span></div>
       </div>
-      <div class="toolbar">
-        <button class="btn" id="btn-check-calendar">Check Calendar</button>
-        <button class="btn" id="btn-auto-plan">Auto-Plan</button>
-        <button class="btn secondary" id="btn-create-events">Create Calendar Events</button>
-        <button class="btn" id="btn-daily-summary">Daily Summary</button>
+    </section>
+    <!-- Missions list -->
+    <section id="view-missions" class="view">
+      <h2>Missions</h2>
+      <ul id="missions-list"></ul>
+    </section>
+    <!-- Calendar controls -->
+    <section id="view-calendar" class="view">
+      <h2>Calendar</h2>
+      <div class="calendar-controls">
+        <button id="btn-check-calendar">Check Calendar</button>
+        <button id="btn-create-events">Create Events</button>
       </div>
-      <section class="card" id="add-quest">
-        <h3>Add Quest</h3>
-        <input id="q-title" placeholder="Title" />
-        <div class="row">
-          <input id="q-xp" type="number" min="0" placeholder="XP" />
-          <input id="q-gold" type="number" min="0" placeholder="Gold" />
-          <select id="q-source">
-            <option value="calendar">Calendar</option>
-            <option value="habit">Habit</option>
-            <option value="system">System</option>
-          </select>
-        </div>
-        <button class="btn" id="btn-add-quest">Add</button>
-      </section>
-      <section id="quests"></section>
+      <div id="calendar-result" class="calendar-result"></div>
+    </section>
+    <!-- Coach chat interface -->
+    <section id="view-coach" class="view">
+      <h2>Coach</h2>
+      <div id="coach-chat" class="chat-window"></div>
+      <div class="chat-input">
+        <textarea id="coach-input" rows="3" placeholder="Ask your coach..."></textarea>
+        <button id="btn-coach-send">Ask Coach</button>
+      </div>
+    </section>
+    <!-- Settings -->
+    <section id="view-settings" class="view">
+      <h2>Settings</h2>
+      <label for="input-user">User ID
+        <input id="input-user" placeholder="User ID" />
+      </label>
+      <button id="btn-set-user">Set User</button>
+      <p class="note">Webhook base URL is configured via secrets and will not be displayed here.</p>
     </section>
   </main>
-  <div id="toast"></div>
   <script src="app.js"></script>
 </body>
 </html>
